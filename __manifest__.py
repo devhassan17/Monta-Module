@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 {
-    "name": "Monta Integration Lite",
+    "name": "Monta-Module",
     "version": "18.0.1.0.0",
     "summary": "Clean Monta <> Odoo integration: orders, products, suppliers, inbound POs, stock sync, logs.",
     "category": "Sales/Integration",
