@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_monta_api,access_monta_api,model_monta_api,base.group_system,1,1,1,0
+access_monta_stock_sync,access_monta_stock_sync,model_monta_stock_sync,base.group_system,1,1,1,0

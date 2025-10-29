@@ -1,0 +1,32 @@
+
+<odoo>
+    <record id="view_res_config_settings_monta" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.monta</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.view_res_config_settings"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@id='settings']" position="inside">
+                <div class="app_settings_block" data-string="Monta" string="Monta">
+                    <h2>Monta Integration</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="monta_base_url"/>
+                                <field name="monta_username" password="True"/>
+                                <field name="monta_password" password="True"/>
+                                <field name="monta_client_id"/>
+                                <field name="monta_client_secret" password="True"/>
+                                <field name="monta_timeout"/>
+                                <field name="monta_inbound_enabled"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="monta_base_url" string="Configure Monta API"/>
+                                <p class="text-muted">Credentials saved in General Settings (not hidden-only system params).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

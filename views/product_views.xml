@@ -1,0 +1,20 @@
+
+<odoo>
+    <record id="product_template_only_form_view_monta" model="ir.ui.view">
+        <field name="name">product.template.only.form.monta</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='sales']" position="after">
+                <group string="Monta">
+                    <field name="monta_product_id" readonly="1"/>
+                    <field name="monta_sku"/>
+                    <field name="monta_min_stock"/>
+                    <field name="monta_stock_level" readonly="1"/>
+                    <field name="is_monta_pack"/>
+                    <button name="action_push_to_monta" type="object" string="Push to Monta"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
