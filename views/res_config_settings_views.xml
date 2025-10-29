@@ -1,32 +1,41 @@
-
 <odoo>
-    <record id="view_res_config_settings_monta" model="ir.ui.view">
-        <field name="name">res.config.settings.view.form.monta</field>
+    <record id="monta_res_config_settings_view" model="ir.ui.view">
+        <field name="name">monta.res.config.settings.form</field>
         <field name="model">res.config.settings</field>
-        <field name="inherit_id" ref="base_setup.view_res_config_settings"/>
         <field name="arch" type="xml">
-            <xpath expr="//div[@id='settings']" position="inside">
-                <div class="app_settings_block" data-string="Monta" string="Monta">
-                    <h2>Monta Integration</h2>
-                    <div class="row mt16 o_settings_container">
-                        <div class="col-12 col-lg-6 o_setting_box">
-                            <div class="o_setting_left_pane">
-                                <field name="monta_base_url"/>
-                                <field name="monta_username" password="True"/>
-                                <field name="monta_password" password="True"/>
-                                <field name="monta_client_id"/>
-                                <field name="monta_client_secret" password="True"/>
-                                <field name="monta_timeout"/>
-                                <field name="monta_inbound_enabled"/>
-                            </div>
-                            <div class="o_setting_right_pane">
-                                <label for="monta_base_url" string="Configure Monta API"/>
-                                <p class="text-muted">Credentials saved in General Settings (not hidden-only system params).</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </xpath>
+            <form string="Monta Settings">
+                <sheet>
+                    <group string="Monta Integration">
+                        <field name="monta_base_url"/>
+                        <field name="monta_username" password="True"/>
+                        <field name="monta_password" password="True"/>
+                        <field name="monta_client_id"/>
+                        <field name="monta_client_secret" password="True"/>
+                        <field name="monta_timeout"/>
+                        <field name="monta_inbound_enabled"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Save" type="object" name="execute" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
         </field>
     </record>
+
+    <record id="action_monta_settings" model="ir.actions.act_window">
+        <field name="name">Monta Settings</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="monta_res_config_settings_view"/>
+        <field name="target">new</field>
+        <field name="context">{}</field>
+    </record>
+
+    <!-- Sales > Configuration > Monta Settings -->
+    <menuitem id="menu_monta_settings"
+              name="Monta Settings"
+              parent="sale.menu_sale_config"
+              action="action_monta_settings"
+              sequence="95"/>
 </odoo>
