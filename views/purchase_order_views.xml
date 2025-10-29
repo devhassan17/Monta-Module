@@ -1,11 +1,11 @@
-
 <odoo>
     <record id="view_purchase_order_form_monta" model="ir.ui.view">
         <field name="name">purchase.order.form.monta</field>
         <field name="model">purchase.order</field>
         <field name="inherit_id" ref="purchase.purchase_order_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//sheet/notebook/page[@name='order_lines']" position="after">
+            <!-- robust: inject a new group at the end of the sheet -->
+            <xpath expr="//sheet" position="inside">
                 <group string="Monta Inbound">
                     <field name="monta_inbound_id" readonly="1"/>
                     <field name="monta_inbound_status" readonly="1"/>
