@@ -3,6 +3,7 @@
 import logging
 import json
 import requests
+from ..services.monta_service import MontaHttp
 from odoo import models, fields, _
 
 _logger = logging.getLogger(__name__)
@@ -130,3 +131,11 @@ class MontaAPI(models.AbstractModel):
     # Stock
     def get_stock_levels(self, params=None):
         return self._req('GET', '/stock', params=params or {})
+
+
+    @staticmethod
+    def pick(d, *keys):
+        for k in keys:
+            if isinstance(d, dict) and k in d and d.get(k) not in (None, ""):
+                return d.get(k)
+        return None

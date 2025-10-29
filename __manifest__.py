@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Monta-Module",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.3.0",
     "summary": "Clean Monta <> Odoo integration: orders, products, suppliers, inbound POs, stock sync, logs.",
     "category": "Sales/Integration",
     "author": "Custom for Ali Raza Jamil",
     "website": "https://monta.nl",
     "license": "LGPL-3",
-    "depends": ["sale_management", "purchase", "stock", "mail"],
+    "depends": ["base_setup", "sale_management", "purchase", "stock", "mail"],
     "data": [
         "security/ir.model.access.csv",
         "views/res_config_settings_views.xml",

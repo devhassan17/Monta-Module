@@ -12,7 +12,11 @@ class SaleOrder(models.Model):
     monta_order_id = fields.Char(string="Monta Order ID", copy=False, readonly=True)
     monta_status = fields.Char(string="Monta Status", readonly=True, tracking=True)
     monta_reference = fields.Char(string="Monta Reference", readonly=True)
+    monta_webshop_order_id = fields.Char(string="Monta Webshop Order ID", readonly=True)
+    monta_remote_order_id = fields.Char(string="Monta Remote OrderID", readonly=True)
+    monta_raw = fields.Json(string="Monta Raw Order", readonly=True)
     monta_delivery_date = fields.Datetime(string="Monta Delivery Date", readonly=True, tracking=True)
+    monta_tracking_url = fields.Char(string="Monta Track & Trace URL", readonly=True)
     
     def _monta_prepare_order_payload(self):
         self.ensure_one()
@@ -64,6 +68,10 @@ class SaleOrder(models.Model):
                 so.monta_order_id = str(res.get('id') or res.get('orderId') or '')
                 so.monta_status = res.get('status') or 'created'
                 so.monta_reference = res.get('reference') or so.name
+                so.monta_tracking_url = res.get('trackAndTraceUrl') or res.get('trackingUrl') or res.get('tracking')
+                so.monta_webshop_order_id = res.get('webShopOrderId') or res.get('webshopOrderId') or res.get('webshop_order_id')
+                so.monta_remote_order_id = res.get('orderId') or res.get('id')
+                so.monta_raw = res
                 so.message_post(body=_("Pushed order to Monta (ID %s).") % (so.monta_order_id or '?'))
                 _logger.info("Order %s pushed to Monta ID %s", so.name, so.monta_order_id)
             except Exception as e:
@@ -95,6 +103,10 @@ class SaleOrder(models.Model):
             so.write({
                 'monta_order_id': str(item.get('id') or item.get('orderId') or so.monta_order_id or ''),
                 'monta_status': item.get('status') or old_status,
+                'monta_tracking_url': item.get('trackAndTraceUrl') or item.get('trackingUrl') or item.get('tracking'),
+                'monta_webshop_order_id': item.get('webShopOrderId') or item.get('webshopOrderId') or item.get('webshop_order_id'),
+                'monta_remote_order_id': item.get('orderId') or item.get('id'),
+                'monta_raw': item,
             })
             # detect delivery
             if (item.get('status') or '').lower() in ('delivered', 'shipped', 'completed'):
