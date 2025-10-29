@@ -4,7 +4,6 @@
         <field name="model">purchase.order</field>
         <field name="inherit_id" ref="purchase.purchase_order_form"/>
         <field name="arch" type="xml">
-            <!-- robust: inject a new group at the end of the sheet -->
             <xpath expr="//sheet" position="inside">
                 <group string="Monta Inbound">
                     <field name="monta_inbound_id" readonly="1"/>
