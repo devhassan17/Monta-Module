@@ -1,11 +1,11 @@
-
 <odoo>
     <record id="product_template_only_form_view_monta" model="ir.ui.view">
         <field name="name">product.template.only.form.monta</field>
         <field name="model">product.template</field>
         <field name="inherit_id" ref="product.product_template_only_form_view"/>
         <field name="arch" type="xml">
-            <xpath expr="//group[@name='sales']" position="after">
+            <!-- robust: inject in sheet -->
+            <xpath expr="//sheet" position="inside">
                 <group string="Monta">
                     <field name="monta_product_id" readonly="1"/>
                     <field name="monta_sku"/>

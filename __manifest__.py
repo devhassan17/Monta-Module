@@ -4,7 +4,7 @@
     "version": "18.0.1.4.0",
     "summary": "Clean Monta <> Odoo integration: orders, products, suppliers, inbound POs, stock sync, logs.",
     "category": "Sales/Integration",
-    "author": "Custom for Ali Raza Jamil 1",
+    "author": "Custom for Ali Raza Jamil 2",
     "website": "https://monta.nl",
     "license": "LGPL-3",
     "depends": ["sale_management", "purchase", "stock", "mail"],
