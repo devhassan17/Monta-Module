@@ -1,80 +1,68 @@
-
 # -*- coding: utf-8 -*-
 import logging
-from odoo import models, fields, api, _
+from odoo import models
 
 _logger = logging.getLogger(__name__)
 
 class PurchaseOrder(models.Model):
-    _inherit = "purchase.order"
-    
-    monta_inbound_id = fields.Char(string="Monta Inbound ID", copy=False, readonly=True)
-    monta_inbound_status = fields.Char(string="Monta Inbound Status", readonly=True, tracking=True)
-    
-    def _monta_prepare_inbound_payload(self):
-        self.ensure_one()
-        supplier = self.partner_id
-        lines = []
-        for line in self.order_line:
-            tmpl = line.product_id.product_tmpl_id
-            sku = tmpl._get_monta_sku()
-            lines.append({
-                "sku": sku,
-                "quantity": line.product_qty,
-                "name": tmpl.name,
-            })
-        payload = {
-            "reference": self.name,
-            "supplier": {
-                "name": supplier.name,
-                "reference": supplier.ref or supplier.id,
-                "email": supplier.email or "",
-                "phone": supplier.phone or ""
-            },
-            "lines": lines
-        }
-        return payload
-    
-    def action_push_inbound_to_monta(self):
-        api = self.env['monta.api']
+    _inherit = 'purchase.order'
+
+    # Manual trigger (from button or shell)
+    def action_monta_push_inbound_forecast(self):
+        svc = self.env['monta.inbound.forecast.service']
         for po in self:
-            # Ensure supplier exists in Monta
-            supplier_ref = po.partner_id.ref or po.partner_id.id
             try:
-                found = api.find_supplier(supplier_ref)
-            except Exception as e:
-                found = {}
-            if not found:
-                try:
-                    api.create_supplier({
-                        "name": po.partner_id.name,
-                        "reference": supplier_ref,
-                        "email": po.partner_id.email or "",
-                        "phone": po.partner_id.phone or ""
-                    })
-                    po.message_post(body=_("Created supplier in Monta: %s") % po.partner_id.name)
-                except Exception as e:
-                    po.message_post(body=_("Failed to create supplier in Monta: %s") % e)
-            
-            # Ensure products exist
-            for line in po.order_line:
-                tmpl = line.product_id.product_tmpl_id
-                if not tmpl.monta_product_id:
-                    try:
-                        tmpl._monta_push_product()
-                    except Exception as e:
-                        po.message_post(body=_("Failed to push product %s to Monta: %s") % (tmpl.display_name, e))
-            
-            payload = po._monta_prepare_inbound_payload()
-            try:
-                if po.monta_inbound_id:
-                    res = self.env['monta.api'].update_inbound(po.monta_inbound_id, payload)
-                    po.message_post(body=_("Updated inbound in Monta (ID %s).") % po.monta_inbound_id)
+                _logger.info("[Monta IF] Start push for PO %s", po.name)
+                ok = svc.send_for_po(po)  # now no instance guard; still respects monta.inbound_enable
+                if ok:
+                    _logger.info("[Monta IF] Done push for PO %s", po.name)
                 else:
-                    res = self.env['monta.api'].create_inbound(payload)
-                    po.monta_inbound_id = str(res.get('id') or res.get('inboundId') or '')
-                    po.monta_inbound_status = res.get('status') or 'created'
-                    po.message_post(body=_("Created inbound in Monta (ID %s).") % (po.monta_inbound_id or '?'))
+                    _logger.info("[Monta IF] Skipped for PO %s (feature disabled or state not eligible)", po.name)
             except Exception as e:
-                po.message_post(body=_("Failed to push inbound to Monta: %s") % e)
-                _logger.exception("Monta inbound push failed")
+                _logger.error("[Monta IF] Failed for %s: %s", po.name, e, exc_info=True)
+        return True
+
+    # Auto-push on confirm
+    def button_confirm(self):
+        res = super().button_confirm()
+        try:
+            self.action_monta_push_inbound_forecast()
+        except Exception as e:
+            _logger.error("[Monta IF] Auto push after confirm failed: %s", e, exc_info=True)
+        return res
+
+    # Auto-update on write (only when already confirmed)
+    def write(self, vals):
+        res = super().write(vals)
+        try:
+            to_push = self.filtered(lambda p: p.state in ('purchase', 'done'))
+            if to_push:
+                svc = self.env['monta.inbound.forecast.service']
+                for po in to_push:
+                    try:
+                        svc.send_for_po(po)
+                    except Exception as e:
+                        _logger.error("[Monta IF] Write-trigger update failed for %s: %s", po.name, e, exc_info=True)
+        except Exception as e:
+            _logger.error("[Monta IF] post-write hook error: %s", e, exc_info=True)
+        return res
+
+    # Delete/cancel hooks
+    def button_cancel(self):
+        res = super().button_cancel()
+        try:
+            svc = self.env['monta.inbound.forecast.service']
+            for po in self:
+                svc.delete_for_po(po, note="Cancelled from Odoo")
+        except Exception as e:
+            _logger.error("[Monta IF] Cancel delete failed: %s", e, exc_info=True)
+        return res
+
+    def unlink(self):
+        try:
+            svc = self.env['monta.inbound.forecast.service']
+            for po in self:
+                svc.delete_for_po(po, note="Deleted from Odoo (unlink)")
+        except Exception as e:
+            _logger.error("[Monta IF] Unlink delete failed: %s", e, exc_info=True)
+        return super().unlink()

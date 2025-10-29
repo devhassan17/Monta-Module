@@ -1,3 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_monta_api,access_monta_api,model_monta_api,base.group_system,1,1,1,0
-access_monta_stock_sync,access_monta_stock_sync,model_monta_stock_sync,base.group_system,1,1,1,0
+access_monta_order_status_user,access_monta_order_status_user,model_monta_order_status,base.group_user,1,0,0,0
+access_monta_order_status_manager,access_monta_order_status_manager,model_monta_order_status,sales_team.group_sale_manager,1,1,0,0
+access_monta_order_status_admin,access_monta_order_status_admin,model_monta_order_status,base.group_system,1,1,1,1
