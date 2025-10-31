@@ -52,11 +52,9 @@
               <field name="track_trace" string="T&amp;T Link" widget="url" readonly="1"/>
             </group>
 
-            <group string="Messages">
+            <!-- Removed attrs (Odoo 17+) -->
+            <group string="Raw">
               <field name="delivery_message" readonly="1"/>
-            </group>
-
-            <group string="Raw" attrs="{'invisible': [('status_raw','=',False)]}">
               <field name="status_raw" widget="text" readonly="1"/>
             </group>
           </sheet>
