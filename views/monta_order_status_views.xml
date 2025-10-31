@@ -16,8 +16,8 @@
           <field name="status_code"/>
           <field name="source"/>
           <field name="monta_order_ref"/>
-          <field name="track_trace_code" string="T&amp;T Code"/>
-          <field name="track_trace_url" string="T&amp;T Link" widget="url"/>
+          <!-- Use existing field and make it clickable -->
+          <field name="track_trace" string="T&amp;T Link" widget="url"/>
           <field name="delivery_date"/>
           <field name="last_sync"/>
         </list>
@@ -48,8 +48,8 @@
             </group>
 
             <group string="Track &amp; Trace">
-              <field name="track_trace_code" string="T&amp;T Code" readonly="1"/>
-              <field name="track_trace_url" string="T&amp;T Link" widget="url" readonly="1"/>
+              <!-- Existing field, clickable -->
+              <field name="track_trace" string="T&amp;T Link" widget="url" readonly="1"/>
             </group>
 
             <group string="Messages">
@@ -77,11 +77,10 @@
           <field name="status_code"/>
           <field name="source"/>
           <field name="monta_order_ref"/>
-          <field name="track_trace_code"/>
-          <field name="track_trace_url"/>
+          <field name="track_trace"/>
 
           <filter string="Has Track &amp; Trace" name="has_ttn"
-                  domain="[('track_trace_url','!=',False)]"/>
+                  domain="[('track_trace','!=',False)]"/>
           <filter string="On Monta" name="has_monta_ref"
                   domain="[('monta_order_ref','!=',False)]"/>
 
