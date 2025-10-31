@@ -16,6 +16,7 @@ class MontaOrderStatus(models.Model):
             "delivery_message": ["delivery_message"],
             "track_trace": ["track_trace", "track_trace_url"],
             "delivery_date": ["delivery_date"],
+            "webshop_order_id": ["webshop_order_id","webshopOrderId"],
             "last_sync": ["last_sync"],
         }
         for dest, keys in mapping.items():

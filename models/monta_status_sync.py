@@ -66,6 +66,7 @@ class SaleOrder(models.Model):
                         order_status=False,
                         delivery_message=(meta or {}).get("reason"),
                         status_raw=(meta or {}).get("status_raw"),
+                    webshop_order_id=((meta or {}).get("refs") or {}).get("webshopOrderId"),
                         last_sync=fields.Datetime.now(),
                     )
                 except Exception:
@@ -91,6 +92,10 @@ class SaleOrder(models.Model):
                 vals_so["monta_delivery_date"] = (meta or {}).get("delivery_date")
             if "monta_status_raw" in so._fields:
                 vals_so["monta_status_raw"] = (meta or {}).get("status_raw")
+            # Webshop ID mirror
+            if "monta_webshop_order_id" in so._fields:
+                vals_so["monta_webshop_order_id"] = ((meta or {}).get("refs") or {}).get("webshopOrderId")
+                vals_so["monta_status_raw"] = (meta or {}).get("status_raw")
 
             # NEW: mirror Available on Monta (true if we have a stable Monta ref)
             if "monta_on_monta" in so._fields:
@@ -112,6 +117,7 @@ class SaleOrder(models.Model):
                     track_trace_url=(meta or {}).get("track_trace"),
                     delivery_date=(meta or {}).get("delivery_date"),
                     status_raw=(meta or {}).get("status_raw"),
+                    webshop_order_id=((meta or {}).get("refs") or {}).get("webshopOrderId"),
                     last_sync=fields.Datetime.now(),
                 )
             except Exception as e:

@@ -51,6 +51,7 @@ class MontaOrderStatus(models.Model):
 
     delivery_message = fields.Char(string="Delivery Message")
     track_trace = fields.Char(string="Track & Trace URL")
+    webshop_order_id = fields.Char(string="Webshop Order ID", index=True)
     delivery_date = fields.Date(string="Delivery Date")
     last_sync = fields.Datetime(string="Last Sync (UTC)", default=fields.Datetime.now, index=True)
 

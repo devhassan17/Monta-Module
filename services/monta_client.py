@@ -15,7 +15,7 @@ class MontaClient:
         base = (ICP.get_param('monta.base_url') or 'https://api-v6.monta.nl').rstrip('/')
         user = ICP.get_param('monta.username') or ''
         pwd  = ICP.get_param('monta.password') or ''
-        to   = int(ICP.get_param('monta.timeout'))
+        to   = int(ICP.get_param('monta.timeout') or DEFAULT_TIMEOUT)
         return base, user, pwd, to
 
     def request(self, order, method, path, payload=None, headers=None):

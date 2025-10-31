@@ -13,3 +13,5 @@ class SaleOrder(models.Model):
     # NEW: mirror of "Available on Monta" (boolean)
     # This corresponds to monta.order.status.on_monta (true when monta_order_ref is set)
     monta_on_monta = fields.Boolean(string="Available on Monta", copy=False, index=True)
+
+    monta_webshop_order_id = fields.Char(string="Monta Webshop Order ID", copy=False, index=True)

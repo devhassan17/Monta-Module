@@ -11,7 +11,7 @@ class MontaStatusResolver:
     """
     Freshest wins (shipments → orderevents → orders), but:
     The ORDER HEADER is authoritative for Blocked / Backorder.
-    Final override priority: Blocked > Backorder > (shipments/events/header).
+    Final override priority: Shipped/Delivered > Blocked > Backorder > (events/header).
     """
 
     def __init__(self, env):
@@ -269,6 +269,7 @@ class MontaStatusResolver:
         header_date = self._pick(cand,"DeliveryDate","ShippedDate","EstimatedDeliveryTo","LatestDeliveryDate")
         header_msg  = self._pick(cand,"BlockedMessage","DeliveryMessage","Message","Reason")
 
+        
         # ---- Choose freshest first
         src         = ship_src or event_src or "orders"
         status_txt  = ship_status or event_status or header_status
@@ -276,53 +277,74 @@ class MontaStatusResolver:
         dd          = ship_date or event_date or header_date
         dm          = ship_msg or event_msg or header_msg
 
-        # ---- AUTHORITATIVE HEADER OVERRIDE - FIXED LOGIC ----
+        # ---- HEADER FLAGS
         header_blocked = self._is_blocked_header(cand)
         header_backord = self._is_backorder_header(cand)
 
-        # CRITICAL FIX: Check header flags FIRST before any other status
-        if header_blocked:
-            # If header says blocked, ALWAYS show as blocked regardless of other statuses
-            prev_status = status_txt
-            status_txt = "Blocked"
-            if header_msg:
-                status_txt += f" — {header_msg}"
-            _logger.info("[Monta] %s STATUS OVERRIDE: Blocked (header authoritative, was: %s)", order_ref, prev_status)
-        
-        elif header_backord:
-            # If header says backorder (and NOT blocked), show as backorder
-            # But don't override if we already have a more advanced status from shipments/events
-            current_lower = (status_txt or "").lower()
-            advanced_statuses = ["shipped", "picked", "picking", "ready to pick", "delivered", "in progress"]
-            
-            if not any(adv in current_lower for adv in advanced_statuses):
-                prev_status = status_txt
-                status_txt = "Backorder"
-                _logger.info("[Monta] %s STATUS OVERRIDE: Backorder (header authoritative, was: %s)", order_ref, prev_status)
+        # ---- SHIPPED/DELIVERED WINS
+        is_shipped_or_delivered = False
+        if status_txt:
+            stl = self._lower(status_txt)
+            is_shipped_or_delivered = any(k in stl for k in ["shipped", "delivered", "out for delivery"])
 
-        status_code = self._pick(cand,"StatusID","DeliveryStatusId","DeliveryStatusCode")
-        stable_ref = (refs["orderNumber"] or refs["webshopOrderId"] or refs["orderGuid"]
-                      or refs["clientReference"] or refs["orderReference"] or order_ref)
+        # If we don't have shipped/delivered, then header flags can override
+        if not is_shipped_or_delivered:
+            if header_blocked:
+                status_txt = header_flag or "Blocked"
+                src = "orders"
+            elif header_backord:
+                status_txt = "Backorder"
+                src = "orders"
+
+        # ---- FALLBACK LABELS
+        if not status_txt:
+            status_txt = "Received / Pending workflow"
+
+        # Compose track&trace preferred link
+        track_trace = tt
+
+        # Try to improve T&T via Collies endpoint when we have an orderId
+        try:
+            oid = refs.get("orderId")
+            if oid:
+                for p in (f"orders/{oid}/collies", f"ordercollies?OrderId={oid}", f"collies?OrderId={oid}"):
+                    scC, col = self._get(p)
+                    lst = self._as_list(col)
+                    if lst:
+                        # Pick the first shipped colli with a link
+                        for c in lst:
+                            url = self._pick(c, "TrackAndTraceLink","TrackAndTraceUrl","TrackingUrl")
+                            code = self._pick(c, "TrackAndTraceCode","TrackingCode","ColliNumber")
+                            if url or code:
+                                track_trace = url or track_trace
+                                # enrich status text if missing tt
+                                if (not url) and code and status_txt and "T&T" not in status_txt:
+                                    status_txt += f" (T&T: {code})"
+                                raise StopIteration
+        except StopIteration:
+            pass
+        except Exception:
+            _logger.debug("[Monta] Collies lookup failed for %s", order_ref)
 
         meta = {
             "source": src,
-            "status_code": status_code,
-            "track_trace": tt,
+            "track_trace": track_trace,
             "delivery_date": dd,
             "delivery_message": dm,
-            "monta_order_ref": stable_ref,
+            "monta_order_ref": refs.get("orderNumber") or refs.get("orderReference"),
+            "refs": refs,
             "status_raw": json.dumps({
-                "order": cand, 
+                "order": cand,
                 "used_source": src,
-                "ship_status": ship_status, 
+                "ship_status": ship_status,
                 "event_status": event_status,
-                "header_blocked": header_blocked, 
+                "header_blocked": header_blocked,
                 "header_backorder": header_backord,
                 "final_status": status_txt,
-                "resolution_notes": "Header blocked has absolute priority over all statuses"
+                "resolution_notes": "Shipped/Delivered overrides backorder; blocked/backorder only apply if not shipped."
             }, ensure_ascii=False),
         }
 
-        _logger.info("[Monta] FINAL RESOLUTION %s -> %s (blocked=%s, backorder=%s, src=%s)", 
-                    order_ref, status_txt, header_blocked, header_backord, src)
+        _logger.info("[Monta] FINAL RESOLUTION %s -> %s (blocked=%s, backorder=%s, src=%s)",
+                     order_ref, status_txt, header_blocked, header_backord, src)
         return status_txt, meta
