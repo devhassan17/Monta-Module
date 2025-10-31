@@ -35,6 +35,7 @@ your end-users for any data transfer to Monta.
     "data": [
         "security/ir.model.access.csv",
         "security/monta_order_status_rules.xml",
+        'views/data/monta_cron.xml',
         # views
         "views/monta_order_status_views.xml",
         "views/sale_order_monta_sync_button.xml",
