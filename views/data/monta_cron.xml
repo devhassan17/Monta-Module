@@ -10,7 +10,6 @@
       <field name="code">model._cron_monta_pull_status()</field>
       <field name="interval_number">10</field>
       <field name="interval_type">minutes</field>
-      <field name="numbercall">-1</field>
       <field name="active">True</field>
     </record>
 
@@ -22,7 +21,6 @@
       <field name="code">model._cron_monta_push_pending()</field>
       <field name="interval_number">5</field>
       <field name="interval_type">minutes</field>
-      <field name="numbercall">-1</field>
       <field name="active">True</field>
     </record>
 
@@ -34,7 +32,6 @@
       <field name="code">model._cron_monta_sync_products_inbound()</field>
       <field name="interval_number">1</field>
       <field name="interval_type">days</field>
-      <field name="numbercall">-1</field>
       <field name="active">False</field>
     </record>
 
