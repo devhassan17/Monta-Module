@@ -12,7 +12,6 @@
       <field name="interval_type">minutes</field>
       <field name="numbercall">-1</field>
       <field name="active">True</field>
-      <field name="user_id" ref="base.user_cron"/>
     </record>
 
     <!-- Push sales orders to Monta that are flagged as pending -->
@@ -25,7 +24,6 @@
       <field name="interval_type">minutes</field>
       <field name="numbercall">-1</field>
       <field name="active">True</field>
-      <field name="user_id" ref="base.user_cron"/>
     </record>
 
     <!-- Optional: nightly product/inbound sync (disabled by default) -->
@@ -38,7 +36,6 @@
       <field name="interval_type">days</field>
       <field name="numbercall">-1</field>
       <field name="active">False</field>
-      <field name="user_id" ref="base.user_cron"/>
     </record>
 
   </data>
