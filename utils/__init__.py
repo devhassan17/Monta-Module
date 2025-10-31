@@ -3,3 +3,4 @@ from . import address
 from . import pack
 from . import sku
 from . import eta  
+from . import log_silencer

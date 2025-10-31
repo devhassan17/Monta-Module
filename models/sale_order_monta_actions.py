@@ -3,6 +3,7 @@ import hashlib
 import logging
 from datetime import timedelta
 from odoo import models, fields, api
+from ..utils.log_silencer import silence_monta_logs
 
 _logger = logging.getLogger(__name__)
 
@@ -17,9 +18,9 @@ class SaleOrder(models.Model):
     monta_last_error_hash = fields.Char(copy=False, index=True)
     monta_last_error_at = fields.Datetime(copy=False)
 
-    # ----------------------
-    # One-note-on-failure API
-    # ----------------------
+    # -----------------------------------------
+    # One-note-on-failure helpers
+    # -----------------------------------------
     def _post_single_block_note(self, reason: str, *, ttl_hours=24):
         """Post ONLY ONE chatter note per (order, reason) within ttl_hours."""
         self.ensure_one()
@@ -27,14 +28,12 @@ class SaleOrder(models.Model):
         now = fields.Datetime.now()
         if self.monta_last_error_hash == h and self.monta_last_error_at and \
            (now - self.monta_last_error_at) < timedelta(hours=ttl_hours):
-            # Already posted recently; do nothing
             return False
 
         body = (
             "<p><b>Monta</b>: Order <b>blocked</b>.</p>"
             f"<p><b>Reason:</b> {reason or 'Unknown'}</p>"
         )
-        # Quiet internal note (no follower emails)
         self.with_context(mail_post_autofollow=False).message_post(
             body=body,
             message_type="comment",
@@ -48,17 +47,15 @@ class SaleOrder(models.Model):
         return True
 
     def _clear_block_note_flags(self):
-        """Call this on success so next failure can notify again."""
         self.write({
             "monta_last_error_hash": False,
             "monta_last_error_at": False,
         })
 
     # -----------------------------------------
-    # Button: open Monta status (kept from before)
+    # Button: open Monta status (unchanged behavior)
     # -----------------------------------------
     def action_open_monta_order_status(self):
-        """Open Monta order status records for this Sale Order with robust XMLID resolution."""
         self.ensure_one()
         candidate_xmlids = [
             "Monta-Module.action_monta_order_status",
@@ -71,7 +68,6 @@ class SaleOrder(models.Model):
         for xid in candidate_xmlids:
             try:
                 action_vals = self.env.ref(xid, raise_if_not_found=True).sudo().read()[0]
-                _logger.debug("Resolved Monta action via XMLID: %s", xid)
                 break
             except ValueError:
                 continue
@@ -89,52 +85,49 @@ class SaleOrder(models.Model):
         action_vals["context"] = ctx
         return action_vals
 
-    # -------------------------------------------------------
-    # Buttons: push/sync — fail fast & post ONE chatter note
-    # -------------------------------------------------------
+    # -----------------------------------------
+    # Buttons wrapped with silence + single-note
+    # -----------------------------------------
     def action_push_to_monta(self):
         """
-        Wrap the original push with a guard:
-        - On first failure: stop immediately, post ONE concise chatter message, log ONE warning.
-        - On success: clear failure flags.
+        Fail fast, silence module logs inside, then post ONE note + ONE warning.
         """
         self.ensure_one()
-        try:
-            # Call original implementation if it exists
-            # (If none exists elsewhere, raise AttributeError to inform)
-            return super(SaleOrder, self).action_push_to_monta()
-        except AttributeError:
-            # No original method defined: treat as configuration error (one note)
-            reason = "Push to Monta is not configured on this database."
-            self._post_single_block_note(reason)
-            _logger.warning("Monta push failed for %s: %s", self.name, reason)
-            return False
-        except Exception as e:
-            # Fail fast, no heavy processing; one note + one log
-            reason = str(e)
-            self._post_single_block_note(reason)
-            _logger.warning("Monta push failed for %s: %s", self.name, reason)
-            return False
-        else:
-            # If no exception, clear flags
-            self._clear_block_note_flags()
+        with silence_monta_logs():
+            try:
+                # Call the original implementation if defined upstream
+                res = super(SaleOrder, self).action_push_to_monta()
+                # Success => clear flags
+                self._clear_block_note_flags()
+                return res
+            except AttributeError:
+                reason = "Push to Monta is not configured."
+                self._post_single_block_note(reason)
+                _logger.warning("Monta push failed for %s: %s", self.name, reason)
+                return False
+            except Exception as e:
+                reason = str(e)
+                self._post_single_block_note(reason)
+                _logger.warning("Monta push failed for %s: %s", self.name, reason)
+                return False
 
     def action_monta_sync_status(self):
         """
-        Wrap the original status sync with the same guard behavior.
+        Same pattern for status sync.
         """
         self.ensure_one()
-        try:
-            return super(SaleOrder, self).action_monta_sync_status()
-        except AttributeError:
-            reason = "Monta status sync is not configured on this database."
-            self._post_single_block_note(reason)
-            _logger.warning("Monta status sync failed for %s: %s", self.name, reason)
-            return False
-        except Exception as e:
-            reason = str(e)
-            self._post_single_block_note(reason)
-            _logger.warning("Monta status sync failed for %s: %s", self.name, reason)
-            return False
-        else:
-            self._clear_block_note_flags()
+        with silence_monta_logs():
+            try:
+                res = super(SaleOrder, self).action_monta_sync_status()
+                self._clear_block_note_flags()
+                return res
+            except AttributeError:
+                reason = "Monta status sync is not configured."
+                self._post_single_block_note(reason)
+                _logger.warning("Monta status sync failed for %s: %s", self.name, reason)
+                return False
+            except Exception as e:
+                reason = str(e)
+                self._post_single_block_note(reason)
+                _logger.warning("Monta status sync failed for %s: %s", self.name, reason)
+                return False
